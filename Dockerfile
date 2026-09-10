@@ -21,4 +21,11 @@ COPY . .
 ENV PORT=10000
 EXPOSE 10000
 
-CMD gunicorn app:app --bind 0.0.0.0:$PORT --workers 2 --timeout 120
+# NOTE: --workers must stay at 1. JOBS and SEEN_INVOICES in app.py are
+# plain in-memory Python dicts/sets. With more than one gunicorn worker,
+# each worker process gets its own separate copy — a request handled by
+# worker A can create a job that worker B (handling the next poll request)
+# has never seen, producing a false "Job not found" error. A single
+# worker keeps all state in one process, which is fine for this demo's
+# traffic level.
+CMD gunicorn app:app --bind 0.0.0.0:$PORT --workers 1 --threads 4 --timeout 120
