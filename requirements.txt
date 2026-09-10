@@ -1,0 +1,30 @@
+# Web framework
+Flask>=3.0.0
+gunicorn>=21.2.0
+
+# Core PDF text extraction
+pdfplumber>=0.10.0
+
+# OCR fallback — Python wrapper for Tesseract
+pytesseract>=0.3.10
+
+# OCR fallback — convert PDF pages to images (requires poppler binaries)
+pdf2image>=1.16.0
+
+# Pillow is required by both pytesseract and pdf2image
+Pillow>=10.0.0
+
+# -----------------------------------------------------------------------
+# SYSTEM-LEVEL DEPENDENCIES (install separately — not pip-installable):
+#
+# 1. Tesseract OCR engine
+#    - macOS:   brew install tesseract
+#    - Ubuntu:  sudo apt-get install tesseract-ocr
+#    - Windows: download installer from https://github.com/UB-Mannheim/tesseract/wiki
+#
+# 2. Poppler (pdf2image needs the `pdftoppm` / `pdfinfo` binaries)
+#    - macOS:   brew install poppler
+#    - Ubuntu:  sudo apt-get install poppler-utils
+#    - Windows: download from https://github.com/oschwartz10612/poppler-windows/releases
+#               and add the bin/ folder to your PATH
+# -----------------------------------------------------------------------

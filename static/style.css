@@ -1,0 +1,195 @@
+/* =====================================================================
+   Invoice Processor — Custom Styles
+   ===================================================================== */
+
+/* --- Global --- */
+body {
+    background-color: #f4f6f9;
+    font-family: "Segoe UI", system-ui, -apple-system, sans-serif;
+}
+
+/* --- Navbar --- */
+.navbar-brand {
+    font-weight: 700;
+    letter-spacing: -0.5px;
+}
+
+/* --- Upload page: drop zone --- */
+.drop-zone {
+    border: 2px dashed #b0bec5;
+    border-radius: 12px;
+    padding: 2.5rem 1.5rem;
+    cursor: pointer;
+    transition: border-color 0.2s, background-color 0.2s;
+    background: #fafbfc;
+}
+
+.drop-zone:hover,
+.drop-zone--active {
+    border-color: #0d6efd;
+    background-color: #e8f0fe;
+}
+
+.upload-card {
+    border-radius: 16px;
+}
+
+/* "How it works" stage icons */
+.stage-icon {
+    width: 52px;
+    height: 52px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 1.5rem;
+}
+
+/* --- Processing page: pipeline --- */
+.pipeline-stage {
+    display: flex;
+    align-items: center;
+    gap: 14px;
+    padding: 14px 0;
+    border-bottom: 1px solid #eee;
+    transition: opacity 0.3s;
+}
+
+.pipeline-stage:last-child {
+    border-bottom: none;
+}
+
+.pipeline-icon {
+    width: 40px;
+    height: 40px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 1.3rem;
+    background: #f0f0f0;
+    border-radius: 10px;
+    flex-shrink: 0;
+    transition: background 0.3s, color 0.3s;
+}
+
+.pipeline-label {
+    flex: 1;
+    min-width: 0;
+}
+
+.pipeline-status {
+    flex-shrink: 0;
+}
+
+.stage-active .pipeline-icon {
+    background: #cce5ff;
+}
+
+.stage-done .pipeline-icon {
+    background: #d4edda;
+}
+
+/* --- Results page: decision banner --- */
+.decision-banner {
+    border-radius: 14px;
+    overflow: hidden;
+}
+
+.decision-approved {
+    background: linear-gradient(135deg, #d4edda 0%, #c3e6cb 100%);
+    color: #155724;
+}
+
+.decision-flagged {
+    background: linear-gradient(135deg, #fff3cd 0%, #ffeeba 100%);
+    color: #856404;
+}
+
+.decision-rejected {
+    background: linear-gradient(135deg, #f8d7da 0%, #f5c6cb 100%);
+    color: #721c24;
+}
+
+.decision-badge-lg {
+    font-size: 3rem;
+    line-height: 1;
+}
+
+.decision-badge-lg .bi-check-circle-fill {
+    color: #28a745;
+}
+
+.decision-badge-lg .bi-exclamation-triangle-fill {
+    color: #ffc107;
+}
+
+.decision-badge-lg .bi-x-octagon-fill {
+    color: #dc3545;
+}
+
+/* Reasoning list */
+.reasoning-list li {
+    line-height: 1.6;
+    color: #333;
+}
+
+/* --- History page: stats cards --- */
+.card {
+    border-radius: 12px;
+}
+
+/* --- Tables --- */
+.table th {
+    font-weight: 600;
+    color: #495057;
+    font-size: 0.88rem;
+}
+
+.table td {
+    font-size: 0.92rem;
+}
+
+/* Code / monospace fields */
+code {
+    background: #eef1f5;
+    padding: 2px 6px;
+    border-radius: 4px;
+    color: #36395a;
+    font-size: 0.88em;
+}
+
+/* --- Responsive tweaks --- */
+@media (max-width: 768px) {
+    .decision-banner .card-body {
+        flex-direction: column;
+        text-align: center;
+    }
+
+    .decision-banner .ms-auto {
+        margin-left: 0 !important;
+    }
+
+    .pipeline-stage {
+        font-size: 0.9rem;
+    }
+}
+
+/* --- Subtle animation for the processing page spinner --- */
+@keyframes fadeInUp {
+    from {
+        opacity: 0;
+        transform: translateY(10px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+.pipeline-stage {
+    animation: fadeInUp 0.4s ease both;
+}
+
+.pipeline-stage:nth-child(1) { animation-delay: 0.05s; }
+.pipeline-stage:nth-child(2) { animation-delay: 0.15s; }
+.pipeline-stage:nth-child(3) { animation-delay: 0.25s; }
+.pipeline-stage:nth-child(4) { animation-delay: 0.35s; }

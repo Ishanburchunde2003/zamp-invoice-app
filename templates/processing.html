@@ -1,0 +1,156 @@
+{% extends "base.html" %}
+{% block title %}Processing… — Invoice Processor{% endblock %}
+
+{% block content %}
+<div class="row justify-content-center">
+    <div class="col-lg-6">
+
+        <div class="card shadow-sm border-0">
+            <div class="card-body p-5 text-center">
+                <h3 class="fw-bold mb-4">Processing Your Invoice</h3>
+                <p class="text-muted mb-4">Please wait while we analyse the document&hellip;</p>
+
+                <!-- Pipeline stages -->
+                <div class="pipeline text-start mx-auto" style="max-width: 360px;">
+                    <!-- Stage 1 -->
+                    <div class="pipeline-stage" data-stage="extracting" id="stage-extracting">
+                        <div class="pipeline-icon">
+                            <i class="bi bi-file-earmark-text"></i>
+                        </div>
+                        <div class="pipeline-label">
+                            <strong>Extracting text from PDF</strong>
+                            <div class="text-muted small">Reading the document contents</div>
+                        </div>
+                        <div class="pipeline-status">
+                            <span class="badge bg-secondary">Waiting</span>
+                        </div>
+                    </div>
+
+                    <!-- Stage 2 -->
+                    <div class="pipeline-stage" data-stage="parsing" id="stage-parsing">
+                        <div class="pipeline-icon">
+                            <i class="bi bi-braces-asterisk"></i>
+                        </div>
+                        <div class="pipeline-label">
+                            <strong>Parsing invoice fields</strong>
+                            <div class="text-muted small">Identifying vendor, amounts, dates</div>
+                        </div>
+                        <div class="pipeline-status">
+                            <span class="badge bg-secondary">Waiting</span>
+                        </div>
+                    </div>
+
+                    <!-- Stage 3 -->
+                    <div class="pipeline-stage" data-stage="matching" id="stage-matching">
+                        <div class="pipeline-icon">
+                            <i class="bi bi-arrow-left-right"></i>
+                        </div>
+                        <div class="pipeline-label">
+                            <strong>Matching to Purchase Order</strong>
+                            <div class="text-muted small">Comparing against PO database</div>
+                        </div>
+                        <div class="pipeline-status">
+                            <span class="badge bg-secondary">Waiting</span>
+                        </div>
+                    </div>
+
+                    <!-- Stage 4 -->
+                    <div class="pipeline-stage" data-stage="deciding" id="stage-deciding">
+                        <div class="pipeline-icon">
+                            <i class="bi bi-shield-check"></i>
+                        </div>
+                        <div class="pipeline-label">
+                            <strong>Producing decision</strong>
+                            <div class="text-muted small">Approve, flag, or reject</div>
+                        </div>
+                        <div class="pipeline-status">
+                            <span class="badge bg-secondary">Waiting</span>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Error container (hidden by default) -->
+                <div class="alert alert-danger mt-4 d-none" id="errorBox"></div>
+            </div>
+        </div>
+
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+(function() {
+    const JOB_ID = "{{ job_id }}";
+    const STAGES = ["extracting", "parsing", "matching", "deciding"];
+    const POLL_INTERVAL = 600; // ms
+
+    // Track which stages we've already marked complete
+    const completed = new Set();
+
+    function updateUI(currentStage, done, error) {
+        // Find the index of the current stage
+        const idx = STAGES.indexOf(currentStage);
+
+        STAGES.forEach((stage, i) => {
+            const el = document.getElementById('stage-' + stage);
+            const badge = el.querySelector('.pipeline-status .badge');
+            const icon = el.querySelector('.pipeline-icon');
+
+            if (done && !error) {
+                // All stages complete
+                badge.className = 'badge bg-success';
+                badge.textContent = 'Done';
+                icon.classList.add('text-success');
+                el.classList.add('stage-done');
+            } else if (i < idx) {
+                // Past stages → completed
+                badge.className = 'badge bg-success';
+                badge.textContent = 'Done';
+                icon.classList.add('text-success');
+                el.classList.add('stage-done');
+            } else if (i === idx) {
+                // Current stage → in progress
+                badge.className = 'badge bg-primary';
+                badge.innerHTML = '<span class="spinner-border spinner-border-sm me-1"></span>Running';
+                icon.classList.add('text-primary');
+                el.classList.add('stage-active');
+            }
+            // Future stages stay as "Waiting"
+        });
+
+        if (error) {
+            const box = document.getElementById('errorBox');
+            box.classList.remove('d-none');
+            box.innerHTML = '<i class="bi bi-exclamation-triangle me-1"></i>' +
+                '<strong>Processing failed.</strong><br>' +
+                '<pre class="mb-0 mt-2" style="white-space:pre-wrap;font-size:.8rem;">' +
+                error + '</pre>';
+        }
+
+        if (done && !error) {
+            // Redirect to results after a brief moment
+            setTimeout(() => {
+                window.location.href = "/results/" + JOB_ID;
+            }, 800);
+        }
+    }
+
+    function poll() {
+        fetch("/status/" + JOB_ID)
+            .then(r => r.json())
+            .then(data => {
+                updateUI(data.stage, data.done, data.error);
+                if (!data.done) {
+                    setTimeout(poll, POLL_INTERVAL);
+                }
+            })
+            .catch(() => {
+                setTimeout(poll, POLL_INTERVAL * 2);
+            });
+    }
+
+    poll();
+})();
+</script>
+{% endblock %}

@@ -1,0 +1,142 @@
+{% extends "base.html" %}
+{% block title %}Upload Invoice — Invoice Processor{% endblock %}
+
+{% block content %}
+<div class="row justify-content-center">
+    <div class="col-lg-7">
+
+        <!-- Hero card -->
+        <div class="card shadow-sm border-0 upload-card">
+            <div class="card-body p-5 text-center">
+
+                <div class="upload-icon-wrapper mb-4">
+                    <i class="bi bi-file-earmark-pdf text-primary" style="font-size: 3.5rem;"></i>
+                </div>
+
+                <h2 class="fw-bold mb-2">Upload an Invoice</h2>
+                <p class="text-muted mb-4">
+                    Upload a PDF invoice to automatically extract data, match it against
+                    purchase orders, and get an instant approval decision.
+                </p>
+
+                <form action="{{ url_for('upload_file') }}"
+                      method="post"
+                      enctype="multipart/form-data"
+                      id="uploadForm">
+
+                    <!-- Drag-and-drop area -->
+                    <div class="drop-zone mb-4" id="dropZone">
+                        <i class="bi bi-cloud-arrow-up fs-1 text-muted mb-2 d-block"></i>
+                        <p class="mb-1 fw-semibold">Drag &amp; drop your PDF here</p>
+                        <p class="text-muted small mb-3">or click to browse</p>
+                        <input type="file"
+                               name="invoice_file"
+                               id="invoiceFile"
+                               accept=".pdf,application/pdf"
+                               class="d-none"
+                               required>
+                        <span class="badge bg-light text-dark border" id="fileName">
+                            No file chosen
+                        </span>
+                    </div>
+
+                    <button type="submit" class="btn btn-primary btn-lg px-5" id="submitBtn" disabled>
+                        <i class="bi bi-gear me-2"></i>Process Invoice
+                    </button>
+                </form>
+
+            </div>
+        </div>
+
+        <!-- How it works -->
+        <div class="card shadow-sm border-0 mt-4">
+            <div class="card-body p-4">
+                <h5 class="fw-bold mb-3"><i class="bi bi-diagram-3 me-2"></i>How It Works</h5>
+                <div class="row g-3">
+                    <div class="col-md-3 text-center">
+                        <div class="stage-icon bg-primary bg-opacity-10 text-primary rounded-circle mx-auto mb-2">
+                            <i class="bi bi-file-earmark-arrow-up"></i>
+                        </div>
+                        <small class="fw-semibold">Upload PDF</small>
+                    </div>
+                    <div class="col-md-3 text-center">
+                        <div class="stage-icon bg-info bg-opacity-10 text-info rounded-circle mx-auto mb-2">
+                            <i class="bi bi-body-text"></i>
+                        </div>
+                        <small class="fw-semibold">Extract Data</small>
+                    </div>
+                    <div class="col-md-3 text-center">
+                        <div class="stage-icon bg-warning bg-opacity-10 text-warning rounded-circle mx-auto mb-2">
+                            <i class="bi bi-arrow-left-right"></i>
+                        </div>
+                        <small class="fw-semibold">Match to PO</small>
+                    </div>
+                    <div class="col-md-3 text-center">
+                        <div class="stage-icon bg-success bg-opacity-10 text-success rounded-circle mx-auto mb-2">
+                            <i class="bi bi-shield-check"></i>
+                        </div>
+                        <small class="fw-semibold">Decision</small>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+(function() {
+    const dropZone  = document.getElementById('dropZone');
+    const fileInput = document.getElementById('invoiceFile');
+    const fileName  = document.getElementById('fileName');
+    const submitBtn = document.getElementById('submitBtn');
+    const form      = document.getElementById('uploadForm');
+
+    // Click → open file picker
+    dropZone.addEventListener('click', () => fileInput.click());
+
+    // File chosen via picker
+    fileInput.addEventListener('change', () => {
+        if (fileInput.files.length > 0) {
+            fileName.textContent = fileInput.files[0].name;
+            fileName.classList.replace('bg-light', 'bg-primary');
+            fileName.classList.replace('text-dark', 'text-white');
+            submitBtn.disabled = false;
+        }
+    });
+
+    // Drag enter/over styling
+    ['dragenter', 'dragover'].forEach(evt => {
+        dropZone.addEventListener(evt, e => {
+            e.preventDefault();
+            dropZone.classList.add('drop-zone--active');
+        });
+    });
+
+    // Drag leave
+    ['dragleave', 'drop'].forEach(evt => {
+        dropZone.addEventListener(evt, e => {
+            e.preventDefault();
+            dropZone.classList.remove('drop-zone--active');
+        });
+    });
+
+    // Drop
+    dropZone.addEventListener('drop', e => {
+        const dt = e.dataTransfer;
+        if (dt.files.length > 0) {
+            fileInput.files = dt.files;
+            fileInput.dispatchEvent(new Event('change'));
+        }
+    });
+
+    // Disable button after submit to prevent double-click
+    form.addEventListener('submit', () => {
+        submitBtn.disabled = true;
+        submitBtn.innerHTML = '<span class="spinner-border spinner-border-sm me-2"></span>Uploading…';
+    });
+})();
+</script>
+{% endblock %}

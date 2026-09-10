@@ -1,0 +1,292 @@
+{% extends "base.html" %}
+{% block title %}Results — Invoice Processor{% endblock %}
+
+{% block content %}
+
+{% if error %}
+<!-- ===== ERROR STATE ===== -->
+<div class="row justify-content-center">
+    <div class="col-lg-8">
+        <div class="card border-danger shadow-sm">
+            <div class="card-body p-4">
+                <h4 class="text-danger"><i class="bi bi-exclamation-octagon me-2"></i>Processing Error</h4>
+                <p>Something went wrong while processing this invoice. The technical details are below.</p>
+                <pre class="bg-light p-3 rounded small">{{ error }}</pre>
+                <a href="{{ url_for('upload_page') }}" class="btn btn-primary mt-2">
+                    <i class="bi bi-arrow-repeat me-1"></i>Try Another Invoice
+                </a>
+            </div>
+        </div>
+    </div>
+</div>
+
+{% elif result %}
+{% set invoice = result.invoice %}
+{% set match   = result.match %}
+{% set decision = match.decision %}
+{% set checks  = match.checks %}
+
+<!-- ===== DECISION BANNER ===== -->
+<div class="row justify-content-center mb-4">
+    <div class="col-lg-10">
+        <div class="card shadow-sm border-0 decision-banner decision-{{ decision }}">
+            <div class="card-body p-4 d-flex align-items-center gap-4 flex-wrap">
+                <div class="decision-badge-lg">
+                    {% if decision == 'approved' %}
+                        <i class="bi bi-check-circle-fill"></i>
+                    {% elif decision == 'flagged' %}
+                        <i class="bi bi-exclamation-triangle-fill"></i>
+                    {% else %}
+                        <i class="bi bi-x-octagon-fill"></i>
+                    {% endif %}
+                </div>
+                <div>
+                    <h3 class="mb-1 fw-bold text-uppercase">{{ decision }}</h3>
+                    <p class="mb-0 opacity-75">
+                        {% if decision == 'approved' %}
+                            All automated checks passed. This invoice is safe to pay.
+                        {% elif decision == 'flagged' %}
+                            Some checks need human review before this invoice can be paid.
+                        {% else %}
+                            This invoice has been rejected and should not be paid.
+                        {% endif %}
+                    </p>
+                </div>
+                <div class="ms-auto">
+                    <span class="badge bg-white text-dark border fs-6">
+                        {{ invoice.get('extraction_method', 'text')|upper }} extraction
+                    </span>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="row justify-content-center">
+    <div class="col-lg-10">
+        <div class="row g-4">
+
+            <!-- ===== LEFT COLUMN: Invoice Details ===== -->
+            <div class="col-md-6">
+
+                <!-- Extracted Fields -->
+                <div class="card shadow-sm border-0 mb-4">
+                    <div class="card-header bg-white border-bottom">
+                        <h5 class="mb-0 fw-semibold">
+                            <i class="bi bi-file-earmark-text me-2 text-primary"></i>Extracted Invoice Data
+                        </h5>
+                    </div>
+                    <div class="card-body p-0">
+                        <table class="table table-sm table-striped mb-0">
+                            <tbody>
+                                <tr><th class="ps-3" style="width:40%">File</th>
+                                    <td>{{ result.filename }}</td></tr>
+                                <tr><th class="ps-3">Vendor</th>
+                                    <td>{{ invoice.vendor_name or '—' }}</td></tr>
+                                <tr><th class="ps-3">Invoice #</th>
+                                    <td><code>{{ invoice.invoice_number or '—' }}</code></td></tr>
+                                <tr><th class="ps-3">Invoice Date</th>
+                                    <td>{{ invoice.invoice_date or '—' }}</td></tr>
+                                <tr><th class="ps-3">PO Number</th>
+                                    <td><code>{{ invoice.po_number or '—' }}</code></td></tr>
+                                <tr><th class="ps-3">Subtotal</th>
+                                    <td>{% if invoice.subtotal is not none %}
+                                            {{ invoice.currency }} {{ "%.2f"|format(invoice.subtotal) }}
+                                        {% else %}—{% endif %}</td></tr>
+                                <tr><th class="ps-3">Tax</th>
+                                    <td>{% if invoice.tax is not none %}
+                                            {{ invoice.currency }} {{ "%.2f"|format(invoice.tax) }}
+                                        {% else %}—{% endif %}</td></tr>
+                                <tr><th class="ps-3">Total Amount</th>
+                                    <td class="fw-bold">
+                                        {% if invoice.total_amount is not none %}
+                                            {{ invoice.currency }} {{ "%.2f"|format(invoice.total_amount) }}
+                                        {% else %}—{% endif %}
+                                    </td></tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+
+                <!-- Line Items -->
+                {% if invoice.line_items %}
+                <div class="card shadow-sm border-0 mb-4">
+                    <div class="card-header bg-white border-bottom">
+                        <h5 class="mb-0 fw-semibold">
+                            <i class="bi bi-list-ol me-2 text-primary"></i>Line Items
+                            <span class="badge bg-primary ms-2">{{ invoice.line_items|length }}</span>
+                        </h5>
+                    </div>
+                    <div class="card-body p-0">
+                        <div class="table-responsive">
+                            <table class="table table-sm table-striped mb-0">
+                                <thead class="table-light">
+                                    <tr>
+                                        <th class="ps-3">Description</th>
+                                        <th class="text-end">Qty</th>
+                                        <th class="text-end">Unit Price</th>
+                                        <th class="text-end pe-3">Amount</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    {% for item in invoice.line_items %}
+                                    <tr>
+                                        <td class="ps-3">{{ item.description }}</td>
+                                        <td class="text-end">{{ item.qty }}</td>
+                                        <td class="text-end">{{ "%.2f"|format(item.unit_price) }}</td>
+                                        <td class="text-end pe-3 fw-semibold">{{ "%.2f"|format(item.amount) }}</td>
+                                    </tr>
+                                    {% endfor %}
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+                {% endif %}
+
+            </div>
+
+            <!-- ===== RIGHT COLUMN: Match & Decision ===== -->
+            <div class="col-md-6">
+
+                <!-- Checks Summary -->
+                <div class="card shadow-sm border-0 mb-4">
+                    <div class="card-header bg-white border-bottom">
+                        <h5 class="mb-0 fw-semibold">
+                            <i class="bi bi-clipboard-check me-2 text-primary"></i>Validation Checks
+                        </h5>
+                    </div>
+                    <div class="card-body">
+                        <ul class="list-unstyled mb-0">
+                            {% set check_labels = {
+                                'required_fields_present': 'Required fields present',
+                                'po_found': 'Purchase order found',
+                                'vendor_approved': 'Vendor approved',
+                                'amount_within_tolerance': 'Amount within tolerance',
+                                'duplicate_detected': 'Duplicate check'
+                            } %}
+                            {% for key, label in check_labels.items() %}
+                            <li class="d-flex align-items-center gap-2 py-2 border-bottom">
+                                {% if key == 'duplicate_detected' %}
+                                    {# Inverted logic: duplicate_detected=False is GOOD #}
+                                    {% if not checks[key] %}
+                                        <i class="bi bi-check-circle-fill text-success fs-5"></i>
+                                    {% else %}
+                                        <i class="bi bi-x-circle-fill text-danger fs-5"></i>
+                                    {% endif %}
+                                {% else %}
+                                    {% if checks[key] %}
+                                        <i class="bi bi-check-circle-fill text-success fs-5"></i>
+                                    {% else %}
+                                        <i class="bi bi-x-circle-fill text-danger fs-5"></i>
+                                    {% endif %}
+                                {% endif %}
+                                <span>{{ label }}</span>
+                            </li>
+                            {% endfor %}
+                        </ul>
+
+                        <!-- Variance info -->
+                        {% if match.variance_amount is not none %}
+                        <div class="mt-3 p-2 bg-light rounded">
+                            <small class="text-muted">
+                                Variance: <strong>{{ match.variance_amount }}</strong>
+                                {% if match.variance_pct is not none %}
+                                    ({{ match.variance_pct }}%)
+                                {% endif %}
+                            </small>
+                        </div>
+                        {% endif %}
+                    </div>
+                </div>
+
+                <!-- Matched PO -->
+                {% if match.matched_po %}
+                <div class="card shadow-sm border-0 mb-4">
+                    <div class="card-header bg-white border-bottom">
+                        <h5 class="mb-0 fw-semibold">
+                            <i class="bi bi-box-seam me-2 text-primary"></i>Matched Purchase Order
+                        </h5>
+                    </div>
+                    <div class="card-body p-0">
+                        <table class="table table-sm mb-0">
+                            <tbody>
+                                <tr><th class="ps-3" style="width:45%">PO Number</th>
+                                    <td><code>{{ match.matched_po.po_number }}</code></td></tr>
+                                <tr><th class="ps-3">Vendor</th>
+                                    <td>{{ match.matched_po.vendor_name }}</td></tr>
+                                <tr><th class="ps-3">PO Amount</th>
+                                    <td>{{ match.matched_po.currency }}
+                                        {{ "%.2f"|format(match.matched_po.po_amount) }}</td></tr>
+                                <tr><th class="ps-3">Already Invoiced</th>
+                                    <td>{{ match.matched_po.currency }}
+                                        {{ "%.2f"|format(match.matched_po.already_invoiced_amount) }}</td></tr>
+                                <tr><th class="ps-3">Remaining Balance</th>
+                                    <td class="fw-bold">{{ match.matched_po.currency }}
+                                        {{ "%.2f"|format(match.matched_po.po_amount - match.matched_po.already_invoiced_amount) }}
+                                    </td></tr>
+                                <tr><th class="ps-3">Vendor Approved</th>
+                                    <td>
+                                        {% if match.matched_po.approved_vendors %}
+                                            <span class="badge bg-success">Yes</span>
+                                        {% else %}
+                                            <span class="badge bg-danger">No</span>
+                                        {% endif %}
+                                    </td></tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+                {% endif %}
+
+                <!-- Reasoning -->
+                <div class="card shadow-sm border-0 mb-4">
+                    <div class="card-header bg-white border-bottom">
+                        <h5 class="mb-0 fw-semibold">
+                            <i class="bi bi-chat-left-text me-2 text-primary"></i>Reasoning
+                        </h5>
+                    </div>
+                    <div class="card-body">
+                        <ol class="mb-0 reasoning-list">
+                            {% for reason in match.reasoning %}
+                            <li class="mb-2">{{ reason }}</li>
+                            {% endfor %}
+                        </ol>
+                    </div>
+                </div>
+
+                <!-- Confidence Notes (from extraction) -->
+                {% if invoice.confidence_notes %}
+                <div class="card shadow-sm border-0 mb-4">
+                    <div class="card-header bg-white border-bottom">
+                        <h5 class="mb-0 fw-semibold">
+                            <i class="bi bi-info-circle me-2 text-warning"></i>Extraction Notes
+                        </h5>
+                    </div>
+                    <div class="card-body">
+                        <ul class="mb-0 small text-muted">
+                            {% for note in invoice.confidence_notes %}
+                            <li class="mb-1">{{ note }}</li>
+                            {% endfor %}
+                        </ul>
+                    </div>
+                </div>
+                {% endif %}
+
+            </div>
+        </div>
+
+        <!-- Action buttons -->
+        <div class="d-flex gap-2 justify-content-center mt-3 mb-4">
+            <a href="{{ url_for('upload_page') }}" class="btn btn-primary">
+                <i class="bi bi-cloud-arrow-up me-1"></i>Process Another Invoice
+            </a>
+            <a href="{{ url_for('history_page') }}" class="btn btn-outline-secondary">
+                <i class="bi bi-clock-history me-1"></i>View History
+            </a>
+        </div>
+    </div>
+</div>
+{% endif %}
+
+{% endblock %}

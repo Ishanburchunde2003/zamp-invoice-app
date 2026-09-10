@@ -1,0 +1,6 @@
+venv/
+__pycache__/
+*.pyc
+uploads/
+processed_history.json
+.DS_Store

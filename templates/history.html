@@ -1,0 +1,129 @@
+{% extends "base.html" %}
+{% block title %}History — Invoice Processor{% endblock %}
+
+{% block content %}
+<div class="row justify-content-center">
+    <div class="col-lg-11">
+
+        <div class="d-flex justify-content-between align-items-center mb-4 flex-wrap gap-2">
+            <h2 class="fw-bold mb-0">
+                <i class="bi bi-clock-history me-2"></i>Processing History
+            </h2>
+            <div class="d-flex gap-2">
+                {% if history %}
+                <a href="{{ url_for('export_history') }}" class="btn btn-sm btn-outline-primary">
+                    <i class="bi bi-download me-1"></i>Export JSON
+                </a>
+                <a href="{{ url_for('clear_history') }}" class="btn btn-sm btn-outline-danger"
+                   onclick="return confirm('Clear all history? This cannot be undone.')">
+                    <i class="bi bi-trash me-1"></i>Clear
+                </a>
+                {% endif %}
+            </div>
+        </div>
+
+        <!-- Stats cards -->
+        <div class="row g-3 mb-4">
+            <div class="col-6 col-md-3">
+                <div class="card shadow-sm border-0 text-center p-3">
+                    <div class="fs-2 fw-bold text-primary">{{ stats.total }}</div>
+                    <small class="text-muted">Total Processed</small>
+                </div>
+            </div>
+            <div class="col-6 col-md-3">
+                <div class="card shadow-sm border-0 text-center p-3">
+                    <div class="fs-2 fw-bold text-success">{{ stats.approved }}</div>
+                    <small class="text-muted">Approved</small>
+                </div>
+            </div>
+            <div class="col-6 col-md-3">
+                <div class="card shadow-sm border-0 text-center p-3">
+                    <div class="fs-2 fw-bold text-warning">{{ stats.flagged }}</div>
+                    <small class="text-muted">Flagged</small>
+                </div>
+            </div>
+            <div class="col-6 col-md-3">
+                <div class="card shadow-sm border-0 text-center p-3">
+                    <div class="fs-2 fw-bold text-danger">{{ stats.rejected }}</div>
+                    <small class="text-muted">Rejected</small>
+                </div>
+            </div>
+        </div>
+
+        <!-- History table -->
+        {% if history %}
+        <div class="card shadow-sm border-0">
+            <div class="card-body p-0">
+                <div class="table-responsive">
+                    <table class="table table-hover align-middle mb-0">
+                        <thead class="table-light">
+                            <tr>
+                                <th class="ps-3">Timestamp</th>
+                                <th>Vendor</th>
+                                <th>Invoice #</th>
+                                <th>Date</th>
+                                <th class="text-end">Amount</th>
+                                <th class="text-center">Method</th>
+                                <th class="text-center">Decision</th>
+                                <th class="text-center pe-3">Details</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for h in history %}
+                            <tr>
+                                <td class="ps-3">
+                                    <small class="text-muted">{{ h.processed_at }}</small>
+                                </td>
+                                <td>{{ h.vendor_name or '—' }}</td>
+                                <td><code>{{ h.invoice_number or '—' }}</code></td>
+                                <td>{{ h.invoice_date or '—' }}</td>
+                                <td class="text-end fw-semibold">
+                                    {% if h.total_amount is not none %}
+                                        {{ h.currency or 'USD' }} {{ "%.2f"|format(h.total_amount) }}
+                                    {% else %}
+                                        —
+                                    {% endif %}
+                                </td>
+                                <td class="text-center">
+                                    <span class="badge bg-{{ 'info' if h.extraction_method == 'ocr' else 'secondary' }}">
+                                        {{ (h.extraction_method or 'text')|upper }}
+                                    </span>
+                                </td>
+                                <td class="text-center">
+                                    {% if h.decision == 'approved' %}
+                                        <span class="badge bg-success">Approved</span>
+                                    {% elif h.decision == 'flagged' %}
+                                        <span class="badge bg-warning text-dark">Flagged</span>
+                                    {% else %}
+                                        <span class="badge bg-danger">Rejected</span>
+                                    {% endif %}
+                                </td>
+                                <td class="text-center pe-3">
+                                    <a href="{{ url_for('results_page', job_id=h.id) }}"
+                                       class="btn btn-sm btn-outline-primary">
+                                        <i class="bi bi-eye"></i>
+                                    </a>
+                                </td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+        {% else %}
+        <div class="card shadow-sm border-0">
+            <div class="card-body p-5 text-center text-muted">
+                <i class="bi bi-inbox fs-1 d-block mb-3"></i>
+                <h5>No invoices processed yet</h5>
+                <p class="mb-3">Upload a PDF invoice to get started.</p>
+                <a href="{{ url_for('upload_page') }}" class="btn btn-primary">
+                    <i class="bi bi-cloud-arrow-up me-1"></i>Upload Invoice
+                </a>
+            </div>
+        </div>
+        {% endif %}
+
+    </div>
+</div>
+{% endblock %}
