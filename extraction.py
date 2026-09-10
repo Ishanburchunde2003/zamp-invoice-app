@@ -88,8 +88,15 @@ def _extract_text_pdfplumber(pdf_path: str) -> str:
     return "\n".join(text_parts)
 
 
-def _extract_text_ocr(pdf_path: str, dpi: int = 300) -> str:
-    """Convert each page to an image then OCR with *pytesseract*."""
+def _extract_text_ocr(pdf_path: str, dpi: int = 150) -> str:
+    """Convert each page to an image then OCR with *pytesseract*.
+
+    dpi=150 (rather than 300) keeps memory usage low — important on
+    memory-constrained hosts (e.g. free-tier PaaS instances with ~512MB
+    RAM), where a 300dpi render of a multi-page PDF can be enough to get
+    the process killed by the OS OOM killer. 150dpi is still plenty for
+    tesseract to read typical invoice text accurately.
+    """
     if pytesseract is None:
         raise ImportError("pytesseract is not installed")
     if convert_from_path is None:
@@ -100,6 +107,7 @@ def _extract_text_ocr(pdf_path: str, dpi: int = 300) -> str:
     for i, img in enumerate(images):
         page_text: str = pytesseract.image_to_string(img)
         text_parts.append(page_text)
+        img.close()  # Free the decoded image buffer as soon as we're done with it
     return "\n".join(text_parts)
 
 
